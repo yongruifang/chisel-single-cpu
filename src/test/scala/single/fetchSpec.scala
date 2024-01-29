@@ -6,7 +6,7 @@ import chisel3.experimental.BundleLiterals._
 
 class FetchSpec extends AnyFreeSpec with ChiselScalatestTester {
    "mycpu should work through fetch.hex" in {
-      test(new Top()) {dut => 
+      test(new Top("src/hex/fetch.hex.txt")) {dut => 
         /*
         dut.clock.step()
         println("exit: ", dut.io.exit.peek())
