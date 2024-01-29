@@ -31,23 +31,46 @@ class Core extends Module{
   val imm_i_sext = Cat(Fill(20, imm_i(11)), imm_i)
   val imm_s = Cat(inst(31,25), inst(11,7))
   val imm_s_sext = Cat(Fill(20, imm_i(11)), imm_i)
+
+  val csignals = ListLookup(
+    inst, List(ALU_X, OP1_RS1, OP2_RS2),
+    Array(
+      LW -> List(ALU_ADD, OP1_RS1, OP2_IMI),
+      SW -> List(ALU_ADD, OP1_RS1, OP2_IMS),
+      ADD -> List(ALU_ADD, OP1_RS1, OP2_RS2),
+      ADDI -> List(ALU_ADD, OP1_RS1, OP2_IMI),
+      SUB -> List(ALU_SUB, OP1_RS1, OP2_RS2),
+      AND -> List(ALU_AND, OP1_RS1, OP2_RS2),
+      OR -> List(ALU_OR, OP1_RS1, OP2_RS2),
+      XOR -> List(ALU_XOR, OP1_RS1, OP2_RS2),
+      ANDI -> List(ALU_AND, OP1_RS1, OP2_IMS),
+      ORI -> List(ALU_OR, OP1_RS1, OP2_IMS),
+      XORI -> List(ALU_XOR, OP1_RS1, OP2_IMS),
+    )
+  )
+  val exe_fun :: op1_sel :: op2_sel :: Nil = csignals
+  
+  val op1_data = MuxCase(0.U(WORD_LEN.W), Seq(
+    (op1_sel === OP1_RS1) -> rs1_data
+  ))
+  val op2_data = MuxCase(0.U(WORD_LEN.W), Seq(
+    (op2_sel === OP2_RS2) -> rs2_data,
+    (op2_sel === OP2_IMI) -> imm_i_sext,
+    (op2_sel === OP2_IMS) -> imm_s_sext
+  ))
   
   /*================ EX阶段 ==================*/
+  
   val alu_out = MuxCase(0.U(WORD_LEN.W), Seq(
-    (inst === LW) -> (rs1_data + imm_i_sext),
-    (inst === SW) -> (rs1_data + imm_s_sext),
-    (inst === ADD) -> (rs1_data + rs2_data),
-    (inst === SUB) -> (rs1_data - rs2_data),
-    (inst === AND) -> (rs1_data & rs2_data),
-    (inst === OR) -> (rs1_data | rs2_data),
-    (inst === XOR) -> (rs1_data ^ rs2_data),
-    (inst === ANDI) -> (rs1_data & imm_i_sext),
-    (inst === ORI) -> (rs1_data | imm_i_sext),
-    (inst === XORI) -> (rs1_data ^ imm_i_sext),
+    (exe_fun === ALU_ADD) -> (op1_data + op2_data),
+    (exe_fun === ALU_SUB) -> (op1_data - op2_data),
+    (exe_fun === ALU_AND) -> (op1_data & op2_data),
+    (exe_fun === ALU_OR) -> (op1_data | op2_data),
+    (exe_fun === ALU_XOR) -> (op1_data ^ op2_data),
   ))
-  /*================ MEM阶段 =================*/
+ /*================ MEM阶段 =================*/
   io.dmem.addr := alu_out
-  io.dmem.write_enable := (inst === SW)
+  io.dmem.write_enable := (inst === SW) // same, can lookup
   io.dmem.write_data := rs2_data
   /*================ WB阶段 ==================*/
   val wb_data = MuxCase(alu_out, Seq(
