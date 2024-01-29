@@ -35,18 +35,22 @@ class Core extends Module{
   /*================ EX阶段 ==================*/
   val alu_out = MuxCase(0.U(WORD_LEN.W), Seq(
     (inst === LW) -> (rs1_data + imm_i_sext),
-    (inst === SW) -> (rs1_data + imm_s_sext)
+    (inst === SW) -> (rs1_data + imm_s_sext),
+    (inst === ADD) -> (rs1_data + rs2_data),
+    (inst === SUB) -> (rs1_data - rs2_data)
   ))
   /*================ MEM阶段 =================*/
   io.dmem.addr := alu_out
   io.dmem.write_enable := (inst === SW)
   io.dmem.write_data := rs2_data
   /*================ WB阶段 ==================*/
-  val wb_data = io.dmem.read_data
-  when(inst === LW) {
+  val wb_data = MuxCase(alu_out, Seq(
+    (inst === LW) -> io.dmem.read_data
+  ))
+  when(inst === LW || inst === ADD || inst === ADDI || inst === SUB) {
     regfile(wb_addr) := wb_data
   }
-  /* exit信号*/
+  /* =========测试辅助信号: exit信号==========*/
   io.exit := (inst === 0x00000000.U(WORD_LEN.W)) 
   /* 调试打印 */
   printf(p"pc_reg: 0x${Hexadecimal(pc_reg)}\n")
