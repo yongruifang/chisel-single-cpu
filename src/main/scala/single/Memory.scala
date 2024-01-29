@@ -14,6 +14,8 @@ class IMemPortIO extends Bundle {
 class DMemPortIO extends Bundle {
   val addr = Input(UInt(WORD_LEN.W))
   val read_data = Output(UInt(WORD_LEN.W))
+  val write_enable = Input(Bool())
+  val write_data = Input(UInt(WORD_LEN.W))
 }
 class Memory(memoryFile: String="") extends Module {
   val io = IO(new Bundle {
@@ -37,6 +39,11 @@ class Memory(memoryFile: String="") extends Module {
     mem(io.dmem.addr + 2.U(WORD_LEN.W)),
     mem(io.dmem.addr + 1.U(WORD_LEN.W)),
     mem(io.dmem.addr)
-
   )
+  when(io.dmem.write_enable) {
+    mem(io.dmem.addr) := io.dmem.write_data(7, 0) 
+    mem(io.dmem.addr + 1.U) := io.dmem.write_data(15, 8) 
+    mem(io.dmem.addr + 2.U) := io.dmem.write_data(23, 16)
+    mem(io.dmem.addr + 3.U) := io.dmem.write_data(31, 24) 
+  }
 }
