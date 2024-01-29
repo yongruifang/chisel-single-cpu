@@ -2,6 +2,7 @@ package single
 
 import chisel3._
 import chisel3.util._
+import chisel3.util.experimental.loadMemoryFromFileInline
 
 import common.Constants._
 
@@ -18,6 +19,7 @@ class Memory extends Module {
   val mem = Mem(16384, UInt(8.W))
   /*加载内存*/
   // loadMemoryFromFile(mem, <path>)
+  loadMemoryFromFileInline(mem, "src/hex/fetch.hex.txt")
   /*取指*/
   io.imem.inst := Cat (
     mem(io.imem.addr + 3.U(WORD_LEN.W)),
