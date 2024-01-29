@@ -11,5 +11,6 @@ class Top(memoryFile: String = "") extends Module {
   val memory = Module(new Memory(memoryFile))
   // 连线
   core.io.imem <> memory.io.imem
+  core.io.dmem <> memory.io.dmem
   io.exit := core.io.exit
 }
