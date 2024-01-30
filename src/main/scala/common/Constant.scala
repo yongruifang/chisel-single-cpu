@@ -29,8 +29,9 @@ object Constants {
   val ALU_JALR = 17.U(EXE_FUN_LEN.W)
 
   val OP1_LEN = 2
-  val OP1_RS1 = 0.U(OP1_LEN.W)
-  val OP1_PC = 1.U(OP1_LEN.W)
+  val OP1_X = 0.U(OP1_LEN.W)
+  val OP1_RS1 = 1.U(OP1_LEN.W)
+  val OP1_PC = 2.U(OP1_LEN.W)
   
   val OP2_LEN = 3
   val OP2_X = 0.U(OP2_LEN.W)
@@ -38,6 +39,7 @@ object Constants {
   val OP2_IMI = 2.U(OP2_LEN.W)
   val OP2_IMS = 3.U(OP2_LEN.W)
   val OP2_IMJ = 4.U(OP2_LEN.W)
+  val OP2_IMU = 5.U(OP2_LEN.W)
 
   val MEN_LEN = 2
   val MEN_X = 0.U(MEN_LEN.W)

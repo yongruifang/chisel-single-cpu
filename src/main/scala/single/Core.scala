@@ -46,7 +46,8 @@ class Core extends Module{
   val imm_b_sext = Cat(Fill(19, imm_b(11)), imm_b, 0.U(1.W))
   val imm_j = Cat(inst(31), inst(19, 12), inst(20), inst(30,21))
   val imm_j_sext = Cat(Fill(11, imm_j(19)), imm_j, 0.U(1.W))
-  
+  val imm_u = inst(31, 12)
+  val imm_u_shifted = Cat(imm_u, Fill(12, 0.U))
 
   val csignals = ListLookup(
     inst, List(ALU_X, OP1_RS1, OP2_RS2, MEN_X, REN_S, WB_MEM),
@@ -80,6 +81,8 @@ class Core extends Module{
       BLTU -> List(BR_BGEU, OP1_RS1, OP2_RS2, MEN_X, REN_X, WB_X),
       JAL -> List(ALU_ADD, OP1_PC, OP2_IMJ, MEN_X, REN_S, WB_PC),
       JALR -> List(ALU_JALR, OP1_RS1, OP2_IMI, MEN_X, REN_S, WB_PC),
+      LUI -> List(ALU_ADD, OP1_X, OP2_IMU, MEN_X, REN_S, WB_ALU),
+      AUIPC -> List(ALU_ADD, OP1_PC, OP2_IMU, MEN_X, REN_S, WB_ALU),
       
     )
   )
@@ -94,6 +97,7 @@ class Core extends Module{
     (op2_sel === OP2_IMI) -> imm_i_sext,
     (op2_sel === OP2_IMS) -> imm_s_sext,
     (op2_sel === OP2_IMJ) -> imm_j_sext,
+    (op2_sel === OP2_IMU) -> imm_u_shifted,
   ))
   
   /*================ EX阶段 ==================*/
