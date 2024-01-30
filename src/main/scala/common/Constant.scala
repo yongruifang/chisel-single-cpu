@@ -27,5 +27,15 @@ object Constants {
   val MEN_X = 0.U(MEN_LEN.W)
   val MEN_S = 1.U(MEN_LEN.W)
   val MEN_V = 2.U(MEN_LEN.W)
+
+  val REN_LEN = 2
+  val REN_X = 0.U(MEN_LEN.W)
+  val REN_S = 1.U(MEN_LEN.W)
+  val REN_V = 2.U(MEN_LEN.W)
+
+  val WB_SEL_LEN = 3
+  val WB_X = 0.U(WB_SEL_LEN.W)
+  val WB_ALU = 0.U(WB_SEL_LEN.W)
+  val WB_MEM = 1.U(WB_SEL_LEN.W)
 }
 
