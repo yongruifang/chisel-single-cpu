@@ -33,22 +33,22 @@ class Core extends Module{
   val imm_s_sext = Cat(Fill(20, imm_i(11)), imm_i)
 
   val csignals = ListLookup(
-    inst, List(ALU_X, OP1_RS1, OP2_RS2),
+    inst, List(ALU_X, OP1_RS1, OP2_RS2, MEN_X),
     Array(
-      LW -> List(ALU_ADD, OP1_RS1, OP2_IMI),
-      SW -> List(ALU_ADD, OP1_RS1, OP2_IMS),
-      ADD -> List(ALU_ADD, OP1_RS1, OP2_RS2),
-      ADDI -> List(ALU_ADD, OP1_RS1, OP2_IMI),
-      SUB -> List(ALU_SUB, OP1_RS1, OP2_RS2),
-      AND -> List(ALU_AND, OP1_RS1, OP2_RS2),
-      OR -> List(ALU_OR, OP1_RS1, OP2_RS2),
-      XOR -> List(ALU_XOR, OP1_RS1, OP2_RS2),
-      ANDI -> List(ALU_AND, OP1_RS1, OP2_IMS),
-      ORI -> List(ALU_OR, OP1_RS1, OP2_IMS),
-      XORI -> List(ALU_XOR, OP1_RS1, OP2_IMS),
+      LW -> List(ALU_ADD, OP1_RS1, OP2_IMI, MEN_X),
+      SW -> List(ALU_ADD, OP1_RS1, OP2_IMS, MEN_S),
+      ADD -> List(ALU_ADD, OP1_RS1, OP2_RS2, MEN_X),
+      ADDI -> List(ALU_ADD, OP1_RS1, OP2_IMI, MEN_X),
+      SUB -> List(ALU_SUB, OP1_RS1, OP2_RS2, MEN_X),
+      AND -> List(ALU_AND, OP1_RS1, OP2_RS2, MEN_X),
+      OR -> List(ALU_OR, OP1_RS1, OP2_RS2, MEN_X),
+      XOR -> List(ALU_XOR, OP1_RS1, OP2_RS2, MEN_X),
+      ANDI -> List(ALU_AND, OP1_RS1, OP2_IMS, MEN_X),
+      ORI -> List(ALU_OR, OP1_RS1, OP2_IMS, MEN_X),
+      XORI -> List(ALU_XOR, OP1_RS1, OP2_IMS, MEN_X),
     )
   )
-  val exe_fun :: op1_sel :: op2_sel :: Nil = csignals
+  val exe_fun :: op1_sel :: op2_sel :: mem_wen :: Nil = csignals
   
   val op1_data = MuxCase(0.U(WORD_LEN.W), Seq(
     (op1_sel === OP1_RS1) -> rs1_data
@@ -70,17 +70,19 @@ class Core extends Module{
   ))
  /*================ MEM阶段 =================*/
   io.dmem.addr := alu_out
-  io.dmem.write_enable := (inst === SW) // same, can lookup
+  // io.dmem.write_enable := (inst === SW) // same, can lookup
+  io.dmem.write_enable := mem_wen
   io.dmem.write_data := rs2_data
   /*================ WB阶段 ==================*/
   val wb_data = MuxCase(alu_out, Seq(
     (inst === LW) -> io.dmem.read_data
-  ))
+  )) // 判断wb_data的类型
   when(inst === LW || inst === ADD || inst === ADDI || inst === SUB
     || inst === AND || inst === OR || inst === XOR || inst === ANDI
-    || inst === ORI || inst === XORI) {
+    || inst === ORI || inst === XORI) { // 判断是否存在回写
     regfile(wb_addr) := wb_data
   }
+  // @TODO: 同样可以在译码阶段进行预处理
   /* =========测试辅助信号: exit信号==========*/
   io.exit := (inst === 0x00000000.U(WORD_LEN.W)) 
   /* 调试打印 */

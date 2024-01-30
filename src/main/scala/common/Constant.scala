@@ -22,5 +22,10 @@ object Constants {
   val OP2_RS2 = 1.U(OP2_LEN.W)
   val OP2_IMI = 2.U(OP2_LEN.W)
   val OP2_IMS = 3.U(OP2_LEN.W)
+
+  val MEN_LEN = 2
+  val MEN_X = 0.U(MEN_LEN.W)
+  val MEN_S = 1.U(MEN_LEN.W)
+  val MEN_V = 2.U(MEN_LEN.W)
 }
 
