@@ -13,6 +13,9 @@ object Constants {
   val ALU_AND = 3.U(EXE_FUN_LEN.W)
   val ALU_OR = 4.U(EXE_FUN_LEN.W)
   val ALU_XOR = 5.U(EXE_FUN_LEN.W)
+  val ALU_SLL = 6.U(EXE_FUN_LEN.W)
+  val ALU_SRL = 7.U(EXE_FUN_LEN.W)
+  val ALU_SRA = 8.U(EXE_FUN_LEN.W)
 
   val OP1_LEN = 2
   val OP1_RS1 = 0.U(OP1_LEN.W)
