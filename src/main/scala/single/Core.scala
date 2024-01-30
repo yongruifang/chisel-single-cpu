@@ -11,6 +11,7 @@ class Core extends Module {
     val imem = Flipped(new IMemPortIO())
     val dmem = Flipped(new DMemPortIO())
     val exit = Output(Bool())
+    val gp = Output(UInt(WORD_LEN.W))
   })
   /* 基础设施 */
   val regfile = Mem(32, UInt(WORD_LEN.W))
@@ -188,8 +189,12 @@ class Core extends Module {
   }
 
   /* =========测试辅助信号: exit信号==========*/
-  io.exit := (inst === 0x00000000.U(WORD_LEN.W))
+  // io.exit := (inst === 0x00000000.U(WORD_LEN.W))
+  // riscv-test 所需的测试结束信号是 0x44
+  io.exit := (pc_reg === 0x44.U(WORD_LEN.W))
+  io.gp := regfile(3)
   /* 调试打印 */
+  printf(p"gp: ${regfile(3)}\n")
   printf(p"pc_reg: 0x${Hexadecimal(pc_reg)}\n")
   printf(p"inst: 0x${Hexadecimal(inst)}\n")
   printf(p"rs1_addr: ${rs1_addr}\n")

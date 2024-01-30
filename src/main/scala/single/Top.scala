@@ -6,6 +6,7 @@ import chisel3.util._
 class Top(memoryFile: String = "") extends Module {
   val io = IO(new Bundle {
     val exit = Output(Bool())
+    val gp = Output(Bool())
   })
   val core = Module(new Core())
   val memory = Module(new Memory(memoryFile))
@@ -13,4 +14,5 @@ class Top(memoryFile: String = "") extends Module {
   core.io.imem <> memory.io.imem
   core.io.dmem <> memory.io.dmem
   io.exit := core.io.exit
+  io.gp := core.io.gp
 }
