@@ -17,7 +17,7 @@ class DMemPortIO extends Bundle {
   val write_enable = Input(Bool())
   val write_data = Input(UInt(WORD_LEN.W))
 }
-class Memory(memoryFile: String="") extends Module {
+class Memory(memoryFile: String = "") extends Module {
   val io = IO(new Bundle {
     val imem = new IMemPortIO()
     val dmem = new DMemPortIO()
@@ -28,22 +28,23 @@ class Memory(memoryFile: String="") extends Module {
   // loadMemoryFromFile(mem, <path>)
   loadMemoryFromFileInline(mem, memoryFile)
   /*取指*/
-  io.imem.inst := Cat (
+  io.imem.inst := Cat(
     mem(io.imem.addr + 3.U(WORD_LEN.W)),
     mem(io.imem.addr + 2.U(WORD_LEN.W)),
-    mem(io.imem.addr + 1.U(WORD_LEN.W)), mem(io.imem.addr)
+    mem(io.imem.addr + 1.U(WORD_LEN.W)),
+    mem(io.imem.addr)
   )
   /*LW*/
-  io.dmem.read_data := Cat (
+  io.dmem.read_data := Cat(
     mem(io.dmem.addr + 3.U(WORD_LEN.W)),
     mem(io.dmem.addr + 2.U(WORD_LEN.W)),
     mem(io.dmem.addr + 1.U(WORD_LEN.W)),
     mem(io.dmem.addr)
   )
   when(io.dmem.write_enable) {
-    mem(io.dmem.addr) := io.dmem.write_data(7, 0) 
-    mem(io.dmem.addr + 1.U) := io.dmem.write_data(15, 8) 
+    mem(io.dmem.addr) := io.dmem.write_data(7, 0)
+    mem(io.dmem.addr + 1.U) := io.dmem.write_data(15, 8)
     mem(io.dmem.addr + 2.U) := io.dmem.write_data(23, 16)
-    mem(io.dmem.addr + 3.U) := io.dmem.write_data(31, 24) 
+    mem(io.dmem.addr + 3.U) := io.dmem.write_data(31, 24)
   }
 }
