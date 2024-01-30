@@ -5,6 +5,7 @@ import chisel3._
 object Constants {
   val WORD_LEN = 32
   val START_ADDR = 0.U
+  val CSR_ADDR_LEN = 12
 
   val EXE_FUN_LEN = 5
   val ALU_X = 0.U(EXE_FUN_LEN.W)
@@ -65,5 +66,6 @@ object Constants {
   val CSR_W = 1.U(CSR_LEN.W)
   val CSR_S = 2.U(CSR_LEN.W)
   val CSR_C = 3.U(CSR_LEN.W)
+  val CSR_E = 4.U(CSR_LEN.W)
 }
 

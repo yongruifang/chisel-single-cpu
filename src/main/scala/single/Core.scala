@@ -27,7 +27,9 @@ class Core extends Module{
 
   val pc_next = MuxCase(pc_plus4, Seq(
     br_flg -> br_target,
-    jmp_flg -> alu_out
+    jmp_flg -> alu_out,
+    // 0x305: mtvec中保存的trap_vec地址
+    (inst === ECALL) -> csr_regfile(0x305)
   ))
   pc_reg := pc_next
   io.imem.addr := pc_reg
@@ -39,9 +41,7 @@ class Core extends Module{
     regfile(rs1_addr), 0.U(WORD_LEN.W))
   val rs2_data = Mux((rs2_addr=/=0.U(WORD_LEN.W)),
     regfile(rs2_addr), 0.U(WORD_LEN.W))
-  val csr_addr = inst(31,20)
-  val csr_rdata = csr_regfile(csr_addr)
-  val imm_i = inst(31,20)
+    val imm_i = inst(31,20)
   val imm_i_sext = Cat(Fill(20, imm_i(11)), imm_i)
   val imm_s = Cat(inst(31,25), inst(11,7))
   val imm_s_sext = Cat(Fill(20, imm_i(11)), imm_i)
@@ -93,6 +93,7 @@ class Core extends Module{
       CSRRSI -> List(ALU_COPY1, OP1_IMZ, OP2_X, MEN_X, REN_S, WB_CSR, CSR_S),
       CSRRC -> List(ALU_COPY1, OP1_RS1, OP2_X, MEN_X, REN_S, WB_CSR, CSR_C),
       CSRRCI -> List(ALU_COPY1, OP1_IMZ, OP2_X, MEN_X, REN_S, WB_CSR, CSR_C),
+      ECALL -> List(ALU_X, OP1_X, OP2_X, MEN_X, REN_X, WB_X, CSR_E),
       
       
     )
@@ -110,7 +111,16 @@ class Core extends Module{
     (op2_sel === OP2_IMJ) -> imm_j_sext,
     (op2_sel === OP2_IMU) -> imm_u_shifted,
   ))
-  
+  // val csr_addr = inst(31,20)
+  val csr_addr = Mux(csr_cmd === CSR_E, 0x342.U(CSR_ADDR_LEN.W), inst(31,20))
+  val csr_rdata = csr_regfile(csr_addr)
+  val csr_wdata = MuxCase(0.U(WORD_LEN.W), Seq(
+    (csr_cmd === CSR_W) -> op1_data,
+    (csr_cmd === CSR_S) -> (csr_rdata | op1_data),
+    (csr_cmd === CSR_C) -> (csr_rdata &  ~op1_data),
+    (csr_cmd === CSR_E) -> 11.U(WORD_LEN.W),// 机器模式的ECALL
+    ))
+
   /*================ EX阶段 ==================*/
   
   alu_out := MuxCase(0.U(WORD_LEN.W), Seq(
@@ -144,15 +154,10 @@ class Core extends Module{
   // io.dmem.write_enable := (inst === SW) // same, can lookup
   io.dmem.write_enable := mem_wen
   io.dmem.write_data := rs2_data
-  /*================ WB阶段 ==================*/
-   val csr_wdata = MuxCase(0.U(WORD_LEN.W), Seq(
-    (csr_cmd === CSR_W) -> op1_data,
-    (csr_cmd === CSR_S) -> (csr_rdata | op1_data),
-    (csr_cmd === CSR_C) -> (csr_rdata &  ~op1_data),
-    ))
   when(csr_cmd > 0.U) {
     csr_regfile(csr_addr) := csr_wdata
   }
+  /*================ WB阶段 ==================*/
   val wb_data = MuxCase(alu_out, Seq(
     (wb_sel === WB_MEM) -> io.dmem.read_data,
     (wb_sel === WB_PC) -> pc_plus4,
