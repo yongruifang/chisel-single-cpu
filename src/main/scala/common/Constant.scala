@@ -25,15 +25,19 @@ object Constants {
   val BR_BGE = 14.U(EXE_FUN_LEN.W)
   val BR_BLTU = 15.U(EXE_FUN_LEN.W)
   val BR_BGEU = 16.U(EXE_FUN_LEN.W)
+  
+  val ALU_JALR = 17.U(EXE_FUN_LEN.W)
 
   val OP1_LEN = 2
   val OP1_RS1 = 0.U(OP1_LEN.W)
+  val OP1_PC = 1.U(OP1_LEN.W)
   
   val OP2_LEN = 3
   val OP2_X = 0.U(OP2_LEN.W)
   val OP2_RS2 = 1.U(OP2_LEN.W)
   val OP2_IMI = 2.U(OP2_LEN.W)
   val OP2_IMS = 3.U(OP2_LEN.W)
+  val OP2_IMJ = 4.U(OP2_LEN.W)
 
   val MEN_LEN = 2
   val MEN_X = 0.U(MEN_LEN.W)
@@ -49,5 +53,6 @@ object Constants {
   val WB_X = 0.U(WB_SEL_LEN.W)
   val WB_ALU = 0.U(WB_SEL_LEN.W)
   val WB_MEM = 1.U(WB_SEL_LEN.W)
+  val WB_PC = 2.U(WB_SEL_LEN.W)
 }
 

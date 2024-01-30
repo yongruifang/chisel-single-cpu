@@ -16,16 +16,20 @@ class Core extends Module{
   val regfile = Mem(32, UInt(WORD_LEN.W))
   val pc_reg = RegInit(START_ADDR)
   /* IF取指 */
+  val inst = io.imem.inst
   // pc_reg := pc_reg + 4.U(WORD_LEN.W)
   val pc_plus4 = pc_reg + 4.U(WORD_LEN.W)
   val br_flg = Wire(Bool())
   val br_target = Wire(UInt(WORD_LEN.W))
+  val jmp_flg = (inst === JAL || inst === JALR)
+  val alu_out = Wire(UInt(WORD_LEN.W))
+
   val pc_next = MuxCase(pc_plus4, Seq(
-    br_flg -> br_target
+    br_flg -> br_target,
+    jmp_flg -> alu_out
   ))
   pc_reg := pc_next
   io.imem.addr := pc_reg
-  val inst = io.imem.inst
   /*=============== 译码阶段 ================*/
   val rs1_addr = inst(19, 15)
   val rs2_addr = inst(24, 20)
@@ -40,6 +44,8 @@ class Core extends Module{
   val imm_s_sext = Cat(Fill(20, imm_i(11)), imm_i)
   val imm_b = Cat(inst(31), inst(7), inst(30, 25), inst(11,8))
   val imm_b_sext = Cat(Fill(19, imm_b(11)), imm_b, 0.U(1.W))
+  val imm_j = Cat(inst(31), inst(19, 12), inst(20), inst(30,21))
+  val imm_j_sext = Cat(Fill(11, imm_j(19)), imm_j, 0.U(1.W))
   
 
   val csignals = ListLookup(
@@ -72,23 +78,27 @@ class Core extends Module{
       BGEU -> List(BR_BGE, OP1_RS1, OP2_RS2, MEN_X, REN_X, WB_X),
       BLT -> List(BR_BLTU, OP1_RS1, OP2_RS2, MEN_X, REN_X, WB_X),
       BLTU -> List(BR_BGEU, OP1_RS1, OP2_RS2, MEN_X, REN_X, WB_X),
+      JAL -> List(ALU_ADD, OP1_PC, OP2_IMJ, MEN_X, REN_S, WB_PC),
+      JALR -> List(ALU_JALR, OP1_RS1, OP2_IMI, MEN_X, REN_S, WB_PC),
       
     )
   )
   val exe_fun :: op1_sel :: op2_sel :: mem_wen :: rf_wen :: wb_sel :: Nil = csignals
   
   val op1_data = MuxCase(0.U(WORD_LEN.W), Seq(
-    (op1_sel === OP1_RS1) -> rs1_data
+    (op1_sel === OP1_RS1) -> rs1_data,
+    (op1_sel === OP1_PC) -> pc_reg,
   )) 
   val op2_data = MuxCase(0.U(WORD_LEN.W), Seq(
     (op2_sel === OP2_RS2) -> rs2_data,
     (op2_sel === OP2_IMI) -> imm_i_sext,
-    (op2_sel === OP2_IMS) -> imm_s_sext
+    (op2_sel === OP2_IMS) -> imm_s_sext,
+    (op2_sel === OP2_IMJ) -> imm_j_sext,
   ))
   
   /*================ EX阶段 ==================*/
   
-  val alu_out = MuxCase(0.U(WORD_LEN.W), Seq(
+  alu_out := MuxCase(0.U(WORD_LEN.W), Seq(
     (exe_fun === ALU_ADD) -> (op1_data + op2_data),
     (exe_fun === ALU_SUB) -> (op1_data - op2_data),
     (exe_fun === ALU_AND) -> (op1_data & op2_data),
@@ -99,8 +109,10 @@ class Core extends Module{
     (exe_fun === ALU_SRA) -> (op1_data.asSInt >> op2_data(4,0)).asUInt,
     (exe_fun === ALU_SLT) -> (op1_data.asSInt <  op2_data.asSInt).asUInt,
     (exe_fun === ALU_SLTU) -> (op1_data <  op2_data).asUInt,
+    (exe_fun === ALU_JALR) -> ((op1_data + op2_data) & ~1.U(WORD_LEN.W)),
+    // jmp_flg 在IF阶段声明并使用
   ))
-  
+ 
   br_flg := MuxCase(false.B, Seq(
     (exe_fun === BR_BEQ) -> (op1_data === op2_data),
     (exe_fun === BR_BNE) -> !(op1_data === op2_data),
@@ -118,7 +130,8 @@ class Core extends Module{
   /*================ WB阶段 ==================*/
   // 同样可以在译码阶段进行预处理
   val wb_data = MuxCase(alu_out, Seq(
-    (wb_sel === WB_MEM) -> io.dmem.read_data
+    (wb_sel === WB_MEM) -> io.dmem.read_data,
+    (wb_sel === WB_PC) -> pc_plus4
   ))
   when(rf_wen === REN_S) {  
     regfile(wb_addr) := wb_data
@@ -139,8 +152,9 @@ class Core extends Module{
   printf(p"dmem.wdata: 0x${Hexadecimal(io.dmem.write_data)}\n")
   printf(p"imm_b: 0x${Hexadecimal(imm_b)}\n")
   printf(p"imm_b_sext: 0x${Hexadecimal(imm_b_sext)}\n")
+  printf(p"imm_j_sext: 0x${Hexadecimal(imm_b_sext)}\n")
   printf(p"branch.flag: ${br_flg}\n")
   printf(p"branch.target: 0x${Hexadecimal(br_target)}\n")
-
+  printf(p"jmp.flag: ${jmp_flg}\n") 
   printf("-----------\n")
 }
